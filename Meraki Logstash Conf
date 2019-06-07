@@ -1,0 +1,81 @@
+input {
+  udp {
+    port  => 2055
+    codec => netflow
+  }
+    syslog {
+        port => 5514
+        use_labels => true
+        type => "syslog"
+    }
+}
+
+filter{
+
+grok {
+      match => { "message" => "<%{BASE10NUM:identifier}>%{BASE10NUM:identifier} %{BASE10NUM:unixtimestamp} %{WORD:hostname} %{WORD:flowtype} (src=)%{IPV4:source_ip} (dst=)%{IPV4:destination_ip} (mac=)%{COMMONMAC:macaddress} (protocol=)%{WORD:protocol} (sport=)%{POSINT:source_port} (dport=)%{POSINT:destination_port} (pattern:) %{GREEDYDATA:pattern}" }
+      add_field => {"flow_direction" => "Outgoing"}
+	  
+	  }
+	  
+	 
+grok {
+	match => {"message" => "<%{BASE10NUM:identifier}>%{BASE10NUM:identifier} %{BASE10NUM:unixtimestamp} %{WORD:hostname} %{WORD:flowtype} (src=)%{IPV4:source_ip} (dst=)%{IPV4:destination_ip} (protocol=)%{WORD:protocol} (sport=)%{POSINT:source_port} (dport=)%{POSINT:destination_port} (pattern:) %{GREEDYDATA:pattern}" }
+    add_field => {"flow_direction" => "Incoming"}
+	add_field => {"macaddress" => "null"}
+	}
+if [flow_direction] == "Incoming"
+{
+	geoip {
+	
+		database => "/etc/logstash/geoipdbs/GeoLite2-City.mmdb"
+		source => "[source_ip]"
+		add_field => {"location" => "%{[geoip][latitude]},%{[geoip][longitude]}" }
+		
+		
+    }
+}
+else{
+geoip {
+	
+		database => "/etc/logstash/geoipdbs/GeoLite2-City.mmdb"
+		source => "[destination_ip]"
+		add_field => {"location" => "%{[geoip][latitude]},%{[geoip][longitude]}" }
+		#add_field => {"location" => "%{[geoip][longitude]}" }
+		#add_field => {"location" => "%{[geoip][latitude]}" }
+		
+		
+    }
+}
+
+
+
+}
+
+output 
+{
+	if [type] == "syslog" 
+	{
+	
+		if [flowtype] == "flows"
+		{
+			elasticsearch {
+				hosts => ["localhost:9200"]
+				template_name =>"syslog"
+				index => "syslog-%{+YYYY.MM.dd}"
+			}
+			
+			
+			#stdout {codec => rubydebug}
+		}
+	}
+	else
+	{
+		elasticsearch 
+		{
+			hosts => ["localhost:9200"]
+			index => "netflow-%{+YYYY.MM.dd}"
+		}
+	}
+  
+}
