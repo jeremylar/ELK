@@ -1,0 +1,53 @@
+PUT _template/syslog
+{
+    "index_patterns" : ["syslog*"],
+    "settings" : {
+        "number_of_shards" : 1
+    },
+    "mappings": {
+    "_source": {
+        "enabled": true
+    },
+    "properties": {
+        "host_name": { "type": "keyword" },
+        "severity_label": { "type": "keyword" },
+	    "host" : { "type" : "ip" },
+	    "message" : { "type" : "text" },
+	    "severity" : { "type" : "integer" },
+	    "facility_label" : { "type" : "text" },
+	    "unixtimestamp" : { "type" : "float" },
+	    "pattern" : { "type" : "text" },
+	    "@timestamp" : { "type" : "date" },
+	    "macaddress" : { "type" : "keyword" },
+	    "destination_port" : { "type" : "integer" },
+	    "type" : { "type" : "keyword" },
+        "source_ip" : { "type" : "ip" },
+        "@version" : { "type" : "integer" },
+	    "facility" : { "type" : "integer" },
+	    "source_port" : { "type" : "integer" },
+	    "protocol" : { "type" : "keyword" },
+	    "flowtype" : { "type" : "keyword" },
+	    "flow_direction" : { "type" : "keyword" },
+	    "geoip" : {
+            "properties":{
+                "ip" :{ "type" : "ip" },
+                "location" : { 
+                    "properties" :{
+                        "lat" : { "type" : "float" },
+                        "lon" : { "type" : "float" }
+                    }
+                },
+            "latitude" : { "type" : "float" },
+            "country_code2" : { "type" : "text" },
+            "timezone" : { "type" : "text" },
+            "country_name" : { "type" : "keyword" },
+            "longitude" : { "type" : "float" },
+            "continent_code" : { "type" : "text" },
+            "country_code3" : { "type" : "text" }
+        }},
+        "destination_ip" : { "type" : "ip" },
+        "priority" : { "type" : "integer" },
+        "location" : { "type" : "geo_point" }
+        }
+    }
+}
